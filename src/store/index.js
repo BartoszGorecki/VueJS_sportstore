@@ -2,14 +2,18 @@ import Vue from "vue";
 import Vuex from "vuex";
 import Axios from "axios";
 import CartModule from "./cart";
+import AuthModule from "./auth";
 import OrdersModule from "./orders";
 
 Vue.use(Vuex);
+
 const baseUrl = "http://localhost:3500";
+const productsUrl = `${baseUrl}/products`;
+const categoriesUrl = `${baseUrl}/categories`;
 
 export default new Vuex.Store({
   strict: true,
-  modules: { cart: CartModule, orders: OrdersModule },
+  modules: { cart: CartModule, auth: AuthModule, orders: OrdersModule },
   state: {
     products: [],
     categoriesData: [],
@@ -22,7 +26,7 @@ export default new Vuex.Store({
     productsFilteredByCategory: state =>
       state.products.filter(
         p =>
-          state.currentCategory == "All" || p.category == state.currentCategory
+          state.currentCategory === "All" || p.category == state.currentCategory
       ),
     processedProducts: (state, getters) => {
       let index = (state.currentPage - 1) * state.pageSize;
@@ -33,9 +37,7 @@ export default new Vuex.Store({
     },
     pageCount: (state, getters) =>
       Math.ceil(getters.productsFilteredByCategory.length / state.pageSize),
-    categories: state => ["All", ...state.categoriesData],
-    showPagination: (state, getters) =>
-      getters.productsFilteredByCategory.length > state.pageSize
+    categories: state => ["All", ...state.categoriesData]
   },
   mutations: {
     setCurrentPage(state, page) {
@@ -49,16 +51,16 @@ export default new Vuex.Store({
       state.currentCategory = category;
       state.currentPage = 1;
     },
-    setData(state, { pdata, cdata }) {
-      state.products = pdata;
-      state.productsTotal = pdata.length;
-      state.categoriesData = cdata.sort();
+    setData(state, data) {
+      state.products = data.pdata;
+      state.productsTotal = data.pdata.length;
+      state.categoriesData = data.cdata.sort();
     }
   },
   actions: {
     async getData(context) {
-      let pdata = (await Axios.get(`${baseUrl}/products`)).data;
-      let cdata = (await Axios.get(`${baseUrl}/categories`)).data;
+      let pdata = (await Axios.get(productsUrl)).data;
+      let cdata = (await Axios.get(categoriesUrl)).data;
       context.commit("setData", { pdata, cdata });
     }
   }
